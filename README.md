@@ -21,6 +21,8 @@ go install github.com/xoai/sage-wiki/cmd/sage-wiki@latest
 
 ## Quickstart
 
+![Compiler Pipeline](sage-wiki-compiler-pipeline.png)
+
 ### Greenfield (new project)
 
 ```bash
@@ -83,9 +85,9 @@ compiler:
   auto_commit: true
 ```
 
-See the [spec](.sage/docs/spec.md) for full configuration reference.
-
 ## MCP Integration
+
+![MCP Integration](sage-wiki-interfaces.png)
 
 ### Claude Code
 
@@ -109,6 +111,8 @@ sage-wiki serve --transport sse --port 3333
 ```
 
 ## Architecture
+
+![Sage-Wiki Architecture](sage-wiki-architecture.png)
 
 - **Storage:** SQLite with FTS5 (BM25 search) + BLOB vectors (cosine similarity)
 - **Ontology:** Typed entity-relation graph with BFS traversal and cycle detection
