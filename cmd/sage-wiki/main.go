@@ -25,7 +25,7 @@ import (
 var (
 	projectDir string
 	configPath string
-	verbose    bool
+	verbosity  int
 )
 
 func main() {
@@ -40,7 +40,7 @@ var rootCmd = &cobra.Command{
 	Short: "LLM-compiled personal knowledge base",
 	Long:  "sage-wiki compiles raw documents into a structured, interlinked markdown wiki using LLM agents.",
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
-		log.SetVerbose(verbose)
+		log.SetVerbosity(verbosity)
 	},
 }
 
@@ -104,7 +104,7 @@ var doctorCmd = &cobra.Command{
 func init() {
 	rootCmd.PersistentFlags().StringVar(&projectDir, "project", ".", "Project directory")
 	rootCmd.PersistentFlags().StringVar(&configPath, "config", "", "Config file path (default: <project>/config.yaml)")
-	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "Enable debug logging")
+	rootCmd.PersistentFlags().CountVarP(&verbosity, "verbose", "v", "Increase log verbosity (-v for info, -vv for debug)")
 
 	// Init flags
 	initCmd.Flags().Bool("vault", false, "Initialize as vault overlay on existing Obsidian vault")

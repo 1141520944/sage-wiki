@@ -18,12 +18,52 @@ type Progress struct {
 	current   string
 	startTime time.Time
 	isTTY     bool
+	spinner   *spinner
 
 	// Accumulated results for summary
 	summarized []string
 	concepts   []string
 	articles   []string
 	failures   []string
+}
+
+// spinner provides a rotating animation for long operations.
+type spinner struct {
+	stop   chan struct{}
+	frames []string
+}
+
+func newSpinner() *spinner {
+	return &spinner{
+		stop:   make(chan struct{}),
+		frames: []string{"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"},
+	}
+}
+
+func (s *spinner) run(getMessage func() string) {
+	go func() {
+		i := 0
+		ticker := time.NewTicker(80 * time.Millisecond)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-s.stop:
+				// Clear spinner line
+				fmt.Fprintf(os.Stderr, "\r%s\r", strings.Repeat(" ", 80))
+				return
+			case <-ticker.C:
+				msg := getMessage()
+				frame := s.frames[i%len(s.frames)]
+				fmt.Fprintf(os.Stderr, "\r  %s %s", frame, msg)
+				i++
+			}
+		}
+	}()
+}
+
+func (s *spinner) halt() {
+	close(s.stop)
+	time.Sleep(100 * time.Millisecond) // let the goroutine clear the line
 }
 
 // NewProgress creates a progress tracker.
@@ -42,6 +82,13 @@ func NewProgress() *Progress {
 func (p *Progress) StartPhase(name string, total int) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
+
+	// Stop previous spinner if any
+	if p.spinner != nil {
+		p.spinner.halt()
+		p.spinner = nil
+	}
+
 	p.phase = name
 	p.total = total
 	p.done = 0
@@ -53,6 +100,19 @@ func (p *Progress) StartPhase(name string, total int) {
 	} else {
 		fmt.Fprintf(os.Stderr, "\n⏳ %s\n", name)
 	}
+
+	// Start spinner on TTY
+	if p.isTTY && total > 0 {
+		p.spinner = newSpinner()
+		p.spinner.run(func() string {
+			p.mu.Lock()
+			defer p.mu.Unlock()
+			if p.current != "" {
+				return fmt.Sprintf("%s %s", p.progressBar(), truncatePath(p.current, 50))
+			}
+			return p.progressBar()
+		})
+	}
 }
 
 // ItemStart marks the beginning of processing an item.
@@ -60,12 +120,6 @@ func (p *Progress) ItemStart(name string) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	p.current = name
-
-	if p.isTTY && p.total > 0 {
-		// Overwrite current line with progress bar
-		bar := p.progressBar()
-		fmt.Fprintf(os.Stderr, "\r  %s %s", bar, truncatePath(name, 50))
-	}
 }
 
 // ItemDone marks successful completion of an item.
@@ -74,15 +128,15 @@ func (p *Progress) ItemDone(name string, detail string) {
 	defer p.mu.Unlock()
 	p.done++
 
+	// Clear spinner line before printing
 	if p.isTTY {
-		// Clear the progress line and print the result
-		fmt.Fprintf(os.Stderr, "\r  ✓ %s", truncatePath(name, 60))
+		fmt.Fprintf(os.Stderr, "\r%s\r", strings.Repeat(" ", 80))
+		fmt.Fprintf(os.Stderr, "  ✓ %s", truncatePath(name, 60))
 		if detail != "" {
-			fmt.Fprintf(os.Stderr, " → %s", detail)
+			fmt.Fprintf(os.Stderr, " → %s", truncatePath(detail, 30))
 		}
 		fmt.Fprintln(os.Stderr)
 	} else {
-		// Non-TTY: simple line output
 		fmt.Fprintf(os.Stderr, "  [%d/%d] ✓ %s", p.done, p.total, name)
 		if detail != "" {
 			fmt.Fprintf(os.Stderr, " → %s", detail)
@@ -100,7 +154,8 @@ func (p *Progress) ItemError(name string, err error) {
 	p.failures = append(p.failures, fmt.Sprintf("%s: %s", name, err))
 
 	if p.isTTY {
-		fmt.Fprintf(os.Stderr, "\r  ✗ %s — %s\n", truncatePath(name, 50), err)
+		fmt.Fprintf(os.Stderr, "\r%s\r", strings.Repeat(" ", 80))
+		fmt.Fprintf(os.Stderr, "  ✗ %s — %s\n", truncatePath(name, 50), err)
 	} else {
 		fmt.Fprintf(os.Stderr, "  [%d/%d] ✗ %s — %s\n", p.done, p.total, name, err)
 	}
@@ -127,6 +182,12 @@ func (p *Progress) ConceptsDiscovered(concepts []string) {
 
 // EndPhase marks phase completion.
 func (p *Progress) EndPhase() {
+	// Stop spinner first (outside lock to avoid deadlock)
+	if p.spinner != nil {
+		p.spinner.halt()
+		p.spinner = nil
+	}
+
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
@@ -141,6 +202,10 @@ func (p *Progress) EndPhase() {
 
 // Summary prints the final compilation summary.
 func (p *Progress) Summary(result *CompileResult) {
+	if p.spinner != nil {
+		p.spinner.halt()
+		p.spinner = nil
+	}
 	elapsed := time.Since(p.startTime)
 
 	fmt.Fprintln(os.Stderr)

@@ -9,19 +9,34 @@ import (
 var logger *slog.Logger
 
 func init() {
+	// Default: WARN level — silent during normal operation.
+	// Use SetVerbosity(1) for INFO, SetVerbosity(2+) for DEBUG.
 	logger = slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{
-		Level: slog.LevelInfo,
+		Level: slog.LevelWarn,
 	}))
 }
 
-// SetVerbose enables debug-level logging.
+// SetVerbose enables info-level logging (single -v).
 func SetVerbose(verbose bool) {
-	level := slog.LevelInfo
 	if verbose {
-		level = slog.LevelDebug
+		SetVerbosity(1)
+	}
+}
+
+// SetVerbosity sets log level by verbosity count.
+// 0 = WARN (default), 1 = INFO (-v), 2+ = DEBUG (-vv).
+func SetVerbosity(level int) {
+	var slogLevel slog.Level
+	switch {
+	case level >= 2:
+		slogLevel = slog.LevelDebug
+	case level == 1:
+		slogLevel = slog.LevelInfo
+	default:
+		slogLevel = slog.LevelWarn
 	}
 	logger = slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{
-		Level: level,
+		Level: slogLevel,
 	}))
 }
 
@@ -33,7 +48,7 @@ func Error(msg string, args ...any) { logger.Error(msg, args...) }
 // Op wraps an error with operation context.
 type Op string
 
-// Err creates a structured error with operation and path context.
+// SageError is a structured error with operation and path context.
 type SageError struct {
 	Op   Op
 	Path string
