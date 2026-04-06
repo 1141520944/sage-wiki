@@ -90,7 +90,10 @@ class Timer:
 
 def get_db():
     db = sqlite3.connect(f"file:{DB_PATH}?mode=ro", uri=True)
-    db.execute("PRAGMA journal_mode=WAL")
+    try:
+        db.execute("PRAGMA journal_mode=WAL")
+    except sqlite3.OperationalError:
+        pass  # read-only DB, WAL not writable — that's fine
     db.execute("PRAGMA cache_size=-64000")
     db.execute("PRAGMA mmap_size=268435456")
     return db
@@ -112,8 +115,9 @@ def cosine_sim(a, b):
     return d / (na * nb) if na > 0 and nb > 0 else 0.0
 
 def batch_cosine_search(qvec, matrix, k=10):
-    if not HAS_NUMPY:
+    if not HAS_NUMPY or len(matrix) == 0:
         return []
+    k = min(k, len(matrix))
     q = np.asarray(qvec).reshape(1, -1)
     sims = (matrix @ q.T).flatten()
     norms = np.linalg.norm(matrix, axis=1)

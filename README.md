@@ -161,6 +161,19 @@ python3 eval.py --json . > report.json
 
 Requires Python 3.10+. Install `numpy` for ~10x faster vector benchmarks.
 
+### Running the tests
+
+```bash
+# Run the full test suite (generates synthetic fixtures, no real data needed)
+python3 -m unittest eval_test -v
+
+# Generate a standalone test fixture
+python3 eval_test.py --generate-fixture ./test-fixture
+python3 eval.py ./test-fixture
+```
+
+24 tests covering: fixture generation, CLI modes (`--perf-only`, `--quality-only`, `--json`), JSON schema validation, score bounds, search recall, edge cases (empty wikis, large datasets, missing paths).
+
 ## Architecture
 
 ![Sage-Wiki Architecture](sage-wiki-architecture.png)
