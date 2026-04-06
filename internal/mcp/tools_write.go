@@ -294,7 +294,11 @@ func (s *Server) handleCompileDiff(ctx context.Context, req mcplib.CallToolReque
 }
 
 func (s *Server) tryEmbed(id string, content string) {
-	embedder := embed.NewCascade(s.cfg.API.Provider, s.cfg.API.APIKey, s.cfg.API.BaseURL)
+	var ov *embed.EmbedOverride
+	if s.cfg.Embed != nil {
+		ov = &embed.EmbedOverride{Provider: s.cfg.Embed.Provider, Model: s.cfg.Embed.Model, Dimensions: s.cfg.Embed.Dimensions, APIKey: s.cfg.Embed.APIKey, BaseURL: s.cfg.Embed.BaseURL}
+	}
+	embedder := embed.NewCascade(s.cfg.API.Provider, s.cfg.API.APIKey, s.cfg.API.BaseURL, ov)
 	if embedder != nil {
 		if vec, err := embedder.Embed(content); err == nil {
 			s.vec.Upsert(id, vec)

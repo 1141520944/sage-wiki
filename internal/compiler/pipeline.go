@@ -130,7 +130,11 @@ func Compile(projectDir string, opts CompileOpts) (*CompileResult, error) {
 
 	memStore := memory.NewStore(db)
 	vecStore := vectors.NewStore(db)
-	embedder := embed.NewCascade(cfg.API.Provider, cfg.API.APIKey, cfg.API.BaseURL)
+	var ov *embed.EmbedOverride
+	if cfg.Embed != nil {
+		ov = &embed.EmbedOverride{Provider: cfg.Embed.Provider, Model: cfg.Embed.Model, Dimensions: cfg.Embed.Dimensions, APIKey: cfg.Embed.APIKey, BaseURL: cfg.Embed.BaseURL}
+	}
+	embedder := embed.NewCascade(cfg.API.Provider, cfg.API.APIKey, cfg.API.BaseURL, ov)
 
 	// Initialize checkpoint state
 	if state == nil {

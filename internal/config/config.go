@@ -56,6 +56,8 @@ type EmbedConfig struct {
 	Provider   string `yaml:"provider"`
 	Model      string `yaml:"model"`
 	Dimensions int    `yaml:"dimensions,omitempty"`
+	APIKey     string `yaml:"api_key,omitempty"`
+	BaseURL    string `yaml:"base_url,omitempty"`
 }
 
 type CompilerConfig struct {

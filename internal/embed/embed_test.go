@@ -8,7 +8,7 @@ import (
 )
 
 func TestCascadeTier1(t *testing.T) {
-	e := NewCascade("openai", "sk-test", "")
+	e := NewCascade("openai", "sk-test", "", nil)
 	if e == nil {
 		t.Fatal("expected embedder for openai")
 	}
@@ -22,14 +22,14 @@ func TestCascadeTier1(t *testing.T) {
 
 func TestCascadeAnthropicFallsThrough(t *testing.T) {
 	// Anthropic has no embedding API — should fall through
-	e := NewCascade("anthropic", "sk-ant-test", "")
+	e := NewCascade("anthropic", "sk-ant-test", "", nil)
 	// This will return nil unless Ollama is running
 	// We can't control Ollama in tests, so just verify no panic
 	_ = e
 }
 
 func TestCascadeNoProvider(t *testing.T) {
-	e := NewCascade("", "", "")
+	e := NewCascade("", "", "", nil)
 	// Should return nil (no provider, no Ollama assumed)
 	// Can't guarantee nil because Ollama might be running locally
 	_ = e
