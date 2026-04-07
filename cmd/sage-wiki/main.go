@@ -17,6 +17,7 @@ import (
 	"github.com/xoai/sage-wiki/internal/memory"
 	mcppkg "github.com/xoai/sage-wiki/internal/mcp"
 	"github.com/xoai/sage-wiki/internal/prompts"
+	tuidashboard "github.com/xoai/sage-wiki/internal/tui/dashboard"
 	"github.com/xoai/sage-wiki/internal/web"
 	"github.com/xoai/sage-wiki/internal/query"
 	"github.com/xoai/sage-wiki/internal/storage"
@@ -103,6 +104,12 @@ var doctorCmd = &cobra.Command{
 	RunE:  runDoctor,
 }
 
+var tuiCmd = &cobra.Command{
+	Use:   "tui",
+	Short: "Launch interactive terminal dashboard",
+	RunE:  runTUI,
+}
+
 func init() {
 	rootCmd.PersistentFlags().StringVar(&projectDir, "project", ".", "Project directory")
 	rootCmd.PersistentFlags().StringVar(&configPath, "config", "", "Config file path (default: <project>/config.yaml)")
@@ -134,7 +141,7 @@ func init() {
 	searchCmd.Flags().StringSlice("tags", nil, "Filter by tags")
 	searchCmd.Flags().Int("limit", 10, "Maximum results")
 
-	rootCmd.AddCommand(initCmd, compileCmd, serveCmd, lintCmd, searchCmd, queryCmd, statusCmd, ingestCmd, doctorCmd)
+	rootCmd.AddCommand(initCmd, compileCmd, serveCmd, lintCmd, searchCmd, queryCmd, statusCmd, ingestCmd, doctorCmd, tuiCmd)
 }
 
 // Placeholder implementations — will be filled in subsequent tasks
@@ -359,7 +366,6 @@ func runSearch(cmd *cobra.Command, args []string) error {
 
 	for i, r := range results {
 		fmt.Printf("%d. [%.4f] %s\n", i+1, r.RRFScore, r.ArticlePath)
-		// Show truncated content
 		content := r.Content
 		if len(content) > 120 {
 			content = content[:120] + "..."
@@ -430,4 +436,9 @@ func runDoctor(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("doctor found errors")
 	}
 	return nil
+}
+
+func runTUI(cmd *cobra.Command, args []string) error {
+	dir, _ := filepath.Abs(projectDir)
+	return tuidashboard.Run(dir)
 }

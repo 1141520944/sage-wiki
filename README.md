@@ -1,6 +1,8 @@
 # sage-wiki
 
-An implementation of [Andrej Karpathy's idea](https://x.com/karpathy/status/2039805659525644595) for an LLM-compiled personal knowledge base. Some lessons learned after building sage-wiki [here](https://x.com/xoai/status/2040936964799795503).
+An implementation of [Andrej Karpathy's idea](https://x.com/karpathy/status/2039805659525644595) for an LLM-compiled personal knowledge base. Developed using [Sage Framework](https://github.com/xoai/sage).
+
+Some lessons learned after building sage-wiki [here](https://x.com/xoai/status/2040936964799795503).
 
 Drop in your papers, articles, and notes. sage-wiki compiles them into a structured, interlinked wiki — with concepts extracted, cross-references discovered, and everything searchable.
 
@@ -63,6 +65,8 @@ sage-wiki compile
 sage-wiki search "attention mechanism"
 # Ask questions
 sage-wiki query "How does flash attention optimize memory?"
+# Interactive terminal dashboard
+sage-wiki tui
 # Browse in the browser (requires -tags webui build)
 sage-wiki serve --ui
 # Watch folder
@@ -92,9 +96,25 @@ sage-wiki compile --watch
 | `sage-wiki lint [--fix] [--pass name]` | Run linting passes |
 | `sage-wiki search "query" [--tags ...]` | Hybrid search (BM25 + vector) |
 | `sage-wiki query "question"` | Q&A against the wiki |
+| `sage-wiki tui` | Launch interactive terminal dashboard |
 | `sage-wiki ingest <url\|path>` | Add a source |
 | `sage-wiki status` | Wiki stats and health |
 | `sage-wiki doctor` | Validate config and connectivity |
+
+## TUI
+
+```bash
+sage-wiki tui
+```
+
+A full-featured terminal dashboard with 4 tabs:
+
+- **[F1] Browse** — Navigate articles by section (concepts, summaries, outputs). Arrow keys to select, Enter to read with glamour-rendered markdown, Esc to go back.
+- **[F2] Search** — Fuzzy search with split-pane preview. Type to filter, results ranked by hybrid score, Enter to open in `$EDITOR`.
+- **[F3] Q&A** — Conversational streaming Q&A. Ask questions, get LLM-synthesized answers with source citations. Ctrl+S saves answer to outputs/.
+- **[F4] Compile** — Live compile dashboard. Watches source directories for changes and auto-recompiles. Browse compiled files with preview.
+
+Tab switching: `F1`-`F4` from any tab, `1`-`4` on Browse/Compile, `Esc` returns to Browse. Quit with `Ctrl+C`.
 
 ## Web UI
 
@@ -308,6 +328,7 @@ python3 eval.py ./test-fixture
 - **Search:** Reciprocal Rank Fusion (RRF) combining BM25 + vector + tag boost + recency decay
 - **Compiler:** 5-pass pipeline (diff, summarize, extract concepts, write articles, images)
 - **MCP:** 14 tools (5 read, 7 write, 2 compound) via stdio or SSE
+- **TUI:** bubbletea + glamour 4-tab terminal dashboard (browse, search, Q&A, compile)
 - **Web UI:** Preact + Tailwind CSS embedded via `go:embed` with build tag (`-tags webui`)
 
 Zero CGO. Pure Go. Cross-platform.

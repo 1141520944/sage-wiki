@@ -199,6 +199,26 @@ func buildQueryContext(projectDir string, question string, topK int, cfg *config
 	return ctx.String(), sources, nil
 }
 
+// SaveAnswer saves a Q&A answer to the outputs/ directory with frontmatter,
+// FTS5 indexing, embeddings, and ontology edges.
+func SaveAnswer(projectDir string, question string, answer string, sources []string, db *storage.DB) (string, error) {
+	cfg, err := config.Load(filepath.Join(projectDir, "config.yaml"))
+	if err != nil {
+		return "", err
+	}
+	memStore := memory.NewStore(db)
+	vecStore := vectors.NewStore(db)
+	ontStore := ontology.NewStore(db)
+	embedder := embed.NewFromConfig(cfg)
+	result := &QueryResult{
+		Question: question,
+		Answer:   answer,
+		Sources:  sources,
+		Format:   "markdown",
+	}
+	return autoFile(projectDir, cfg.Output, result, memStore, vecStore, ontStore, embedder)
+}
+
 // autoFile saves the query result to wiki/outputs/ with frontmatter.
 func autoFile(projectDir string, outputDir string, result *QueryResult,
 	memStore *memory.Store, vecStore *vectors.Store, ontStore *ontology.Store,
