@@ -94,16 +94,23 @@ func SetLanguage(lang string) {
 	outputLanguage = lang
 }
 
+// jsonOnlyTemplates lists templates that require structured output (JSON).
+// Language instructions are skipped for these to avoid corrupting the format.
+var jsonOnlyTemplates = map[string]bool{
+	"extract_concepts": true,
+}
+
 // Render renders a named template with the given data.
 // Uses user overrides if loaded, otherwise embedded defaults.
-// If a language is configured via SetLanguage, appends a language instruction.
+// If a language is configured via SetLanguage, appends a language instruction
+// (except for JSON-output templates like extract_concepts).
 func Render(name string, data any) (string, error) {
 	var buf bytes.Buffer
 	if err := activeTemplates.ExecuteTemplate(&buf, name+".txt", data); err != nil {
 		return "", fmt.Errorf("prompts.Render(%s): %w", name, err)
 	}
 	result := buf.String()
-	if outputLanguage != "" {
+	if outputLanguage != "" && !jsonOnlyTemplates[name] {
 		result += fmt.Sprintf("\n\nIMPORTANT: Write your entire response in %s. Keep technical terms, code, and proper nouns in their original form.", outputLanguage)
 	}
 	return result, nil
