@@ -81,8 +81,9 @@ func ReExtract(projectDir string) (*CompileResult, error) {
 
 	memStore := memory.NewStore(db)
 	vecStore := vectors.NewStore(db)
-	merged := ontology.MergedRelations(cfg.Ontology.Relations)
-	ontStore := ontology.NewStore(db, ontology.ValidRelationNames(merged))
+	mergedRels := ontology.MergedRelations(cfg.Ontology.Relations)
+	mergedTypes := ontology.MergedEntityTypes(cfg.Ontology.EntityTypes)
+	ontStore := ontology.NewStore(db, ontology.ValidRelationNames(mergedRels), ontology.ValidEntityTypeNames(mergedTypes))
 	embedder := embed.NewFromConfig(cfg)
 	chunkStore := memory.NewChunkStore(db)
 
@@ -115,7 +116,7 @@ func ReExtract(projectDir string) (*CompileResult, error) {
 			articleMaxTokens = 4000
 		}
 
-		relPatterns := ontology.RelationPatterns(merged)
+		relPatterns := ontology.RelationPatterns(mergedRels)
 		log.Info("Pass 3: writing articles", "concepts", len(concepts))
 		articles := WriteArticles(ArticleWriteOpts{
 			ProjectDir:       projectDir,

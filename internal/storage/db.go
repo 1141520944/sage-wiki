@@ -135,19 +135,33 @@ func (db *DB) migrate() error {
 		return err
 	}
 
-	migrations := []string{
-		migrationV1,
-		migrationV2,
-		migrationV3,
+	type migration struct {
+		sql            string
+		disableFK      bool // run PRAGMA foreign_keys=OFF before tx, restore after
+	}
+
+	migrations := []migration{
+		{sql: migrationV1},
+		{sql: migrationV2},
+		{sql: migrationV3},
+		{sql: migrationV4, disableFK: true},
 	}
 
 	for i := version; i < len(migrations); i++ {
+		m := migrations[i]
 		log.Info("running migration", "version", i+1)
+
+		if m.disableFK {
+			if _, err := db.write.Exec("PRAGMA foreign_keys = OFF"); err != nil {
+				return fmt.Errorf("migration v%d: disable FK: %w", i+1, err)
+			}
+		}
+
 		tx, err := db.write.Begin()
 		if err != nil {
 			return fmt.Errorf("migration v%d: begin: %w", i+1, err)
 		}
-		if _, err := tx.Exec(migrations[i]); err != nil {
+		if _, err := tx.Exec(m.sql); err != nil {
 			tx.Rollback()
 			return fmt.Errorf("migration v%d: %w", i+1, err)
 		}
@@ -157,6 +171,12 @@ func (db *DB) migrate() error {
 		}
 		if err := tx.Commit(); err != nil {
 			return fmt.Errorf("migration v%d: commit: %w", i+1, err)
+		}
+
+		if m.disableFK {
+			if _, err := db.write.Exec("PRAGMA foreign_keys = ON"); err != nil {
+				return fmt.Errorf("migration v%d: restore FK: %w", i+1, err)
+			}
 		}
 	}
 
@@ -267,4 +287,44 @@ CREATE TABLE IF NOT EXISTS vec_chunks (
 	dimensions INTEGER NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_vec_chunks_doc ON vec_chunks(doc_id);
+`
+
+// migrationV4 removes the CHECK constraint on entities.type to support custom entity types.
+// Requires disableFK=true in the migration runner because we drop and recreate the entities
+// table, which temporarily invalidates the relations FK reference.
+const migrationV4 = `
+-- Remove CHECK constraint on entities.type for custom entity types
+CREATE TABLE IF NOT EXISTS entities_new (
+	id TEXT PRIMARY KEY,
+	type TEXT NOT NULL,
+	name TEXT NOT NULL,
+	definition TEXT,
+	article_path TEXT,
+	metadata JSON,
+	created_at TEXT,
+	updated_at TEXT
+);
+
+INSERT OR IGNORE INTO entities_new SELECT * FROM entities;
+DROP TABLE IF EXISTS entities;
+ALTER TABLE entities_new RENAME TO entities;
+
+-- Recreate relations table to restore CASCADE DELETE on the new entities table
+CREATE TABLE IF NOT EXISTS relations_rebuild (
+	id TEXT PRIMARY KEY,
+	source_id TEXT NOT NULL REFERENCES entities(id) ON DELETE CASCADE,
+	target_id TEXT NOT NULL REFERENCES entities(id) ON DELETE CASCADE,
+	relation TEXT NOT NULL,
+	metadata JSON,
+	created_at TEXT,
+	UNIQUE(source_id, target_id, relation)
+);
+
+INSERT OR IGNORE INTO relations_rebuild SELECT * FROM relations;
+DROP TABLE IF EXISTS relations;
+ALTER TABLE relations_rebuild RENAME TO relations;
+
+CREATE INDEX IF NOT EXISTS idx_relations_source ON relations(source_id);
+CREATE INDEX IF NOT EXISTS idx_relations_target ON relations(target_id);
+CREATE INDEX IF NOT EXISTS idx_relations_type ON relations(relation);
 `
