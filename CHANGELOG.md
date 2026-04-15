@@ -1,5 +1,130 @@
 # Changelog
 
+## 0.1.4 — 2026-04-15
+
+### Large Vault Performance
+
+Architecture shift from "compile everything" to "index fast, compile what matters" for vaults of 10K-100K+ documents. 9 milestones across 4 phases, 4 independent code reviews passed.
+
+#### Tiered Compilation
+
+- **4-tier system** — Tier 0 (FTS5 index, ~5ms, free), Tier 1 (+ vector embed, ~200ms), Tier 2 (code parse, ~10ms, free), Tier 3 (full LLM compile, ~5-8 min). A 100K vault is searchable at Tier 1 in ~5.5 hours instead of 555 days.
+- **File-type-aware defaults** — JSON/YAML/TOML/lock → Tier 0, prose/code → Tier 1. Configurable via `compiler.tier_defaults`.
+- **Per-file overrides** — `.wikitier` files per directory and `tier:` frontmatter field. Priority: frontmatter > .wikitier > tier_defaults > default_tier.
+- **Auto-promotion** — Sources promote to Tier 3 after 3+ search hits or when topic cluster reaches 5+ sources. Configurable via `compiler.promote_signals`.
+- **Auto-demotion** — Stale articles (90 days without queries) demote to Tier 1. Modified sources revert for recompilation. Configurable via `compiler.demote_signals`.
+- **compile_items table** — New SQLite migration V5 with per-source tier, 6 pass-completion flags, promotion/demotion timestamps, quality metrics, and 5 indexes. Replaces JSON `compile-state.json` for checkpoint/resume.
+- **Checkpoint migration** — Existing `compile-state.json` auto-migrates to `compile_items` on first compile. Batch-in-flight checkpoints preserved.
+
+#### Compile-on-Demand
+
+- **`wiki_compile_topic` MCP tool** — Agents trigger compilation for specific topics. Searches for uncompiled sources, promotes to Tier 3, runs full pipeline. ~2 min for 20 sources.
+- **Search response signaling** — `wiki_search` now returns `uncompiled_sources` count and `compile_hint` in every response. Agents know when richer results are available.
+- **CompileCoordinator** — Serializes background (watch mode) and on-demand compiles via shared mutex with `TryCompile` (non-blocking) and `CompileOrWait` (context-aware timeout).
+
+#### Adaptive Backpressure
+
+- **Default `max_parallel` 4→20** — Safe for all paid API tiers.
+- **BackpressureController** — Replaces fixed semaphore. Halves concurrency on 429s with exponential backoff + jitter. Doubles back after 5 consecutive successes. Self-tunes to any provider's rate limits at runtime.
+- **RateLimitError type** — LLM client detects HTTP 429 across all providers and returns typed error for backpressure integration.
+
+#### Code Parsers
+
+- **10 built-in parsers** — Go (via `go/parser` + `go/ast`, perfect accuracy), TypeScript/JavaScript, Python, Rust, Java, C/C++, Ruby (via regex, ~90% coverage), JSON/YAML/TOML (key extraction).
+- **Pluggable `Parser` interface** — `internal/extract/parsers/` package with Registry. Future tree-sitter WASM upgrade path.
+- **Pipeline integration** — Structural summaries appended to FTS5 entries at Tier 0/1. Code searchable by function name, type, import path.
+
+#### Document Splitting
+
+- **`SplitByHeadings()`** — Splits large documents (>15K chars) at markdown heading boundaries for the write pass. Reduces context per LLM call by 3-4x.
+- **Section-aware article writing** — `buildSourceContext()` selects only sections relevant to each concept via term matching. 4K char cap per source.
+
+#### Quality Scoring
+
+- **Per-article confidence** — Source coverage (40%), extraction completeness (30%), cross-reference density (30%). Stored in `compile_items.quality_score`.
+- **QualityPass in linter** — `sage-wiki lint` flags articles below quality threshold (default 0.5). Reports tier distribution and compilation error count.
+- **`source_type` tracking** — Distinguishes compiler/scribe/manual ingestion paths in compile_items.
+
+#### Concept Deduplication
+
+- **Embedding-based dedup cache** — Cosine similarity check before article writing (threshold 0.85). Near-duplicate concepts merge as aliases. Capped at 50K entries, loads existing vectors from store (no re-embedding on seed).
+
+#### Session Scribe
+
+- **Scribe interface** — `internal/scribe/` package with pluggable `Scribe` interface (Name, Process → Result). Extensible for future git-commit and issue-tracker scribes.
+- **Session scribe** — Processes Claude Code JSONL transcripts: compress (strip thinking blocks, ~99% reduction) → extract entities via LLM (max 10/session, kebab-case ID gate) → compare against ontology (ADD/UPDATE/NONE disposition). Handles both string and array-of-blocks content formats.
+- **`sage-wiki scribe <file>`** — New CLI command for session entity extraction.
+
+#### Batch API Default
+
+- **`mode: auto`** is now the default. Automatically uses batch API (50% cost savings) when 10+ sources are pending and the provider supports it.
+
+### New Config Fields
+
+```yaml
+compiler:
+  max_parallel: 20              # adaptive backpressure (was 4)
+  mode: auto                    # standard, batch, or auto
+  default_tier: 1               # 0=index, 1=embed, 3=compile
+  tier_defaults:                # per-extension tier overrides
+    json: 0
+    yaml: 0
+    md: 1
+    go: 1
+  auto_promote: true
+  promote_signals:
+    query_hit_count: 3
+    cluster_size: 5
+    import_centrality: 10
+  auto_demote: true
+  demote_signals:
+    source_modified: true
+    stale_days: 90
+  split_threshold: 15000        # chars, for document splitting
+  backpressure: true
+  dedup_threshold: 0.85         # cosine similarity for concept dedup
+```
+
+### New Commands
+
+- `sage-wiki scribe <session-file>` — Extract entities from session transcripts
+
+### New MCP Tools
+
+- `wiki_compile_topic(topic, max_sources?)` — Compile sources for a specific topic on demand
+
+### Documentation
+
+- **[Scaling guide](docs/guides/large-vault-performance.md)** — Comprehensive guide covering tiers, config, on-demand compilation, backpressure, code parsers, quality scoring, cost estimation, and recommended workflow for large vaults.
+- **[Local models guide](docs/guides/local-models.md)** — Per-pass model routing, GPU/CPU/mixed configurations, quality trade-offs, Ollama setup.
+
+### Stats
+
+- 27 packages, 0 failures
+- 64 files changed, 7,708 insertions
+- 4 ADRs (023-026)
+- 4 independent code reviews passed
+
+### Binaries
+
+| Platform                    | Binary                        | Size  |
+| --------------------------- | ----------------------------- | ----- |
+| Linux amd64                 | `sage-wiki-linux-amd64`       | 33 MB |
+| Linux arm64                 | `sage-wiki-linux-arm64`       | 31 MB |
+| macOS amd64 (Intel)         | `sage-wiki-darwin-amd64`      | 34 MB |
+| macOS arm64 (Apple Silicon) | `sage-wiki-darwin-arm64`      | 33 MB |
+| Windows amd64               | `sage-wiki-windows-amd64.exe` | 34 MB |
+| Windows arm64               | `sage-wiki-windows-arm64.exe` | 32 MB |
+
+### Docker
+
+```bash
+docker pull ghcr.io/xoai/sage-wiki:v0.1.4
+docker pull xoai/sage-wiki:v0.1.4
+```
+
+---
+
 ## 0.1.3 — 2026-04-11
 
 ### Graph-Enhanced Retrieval
@@ -41,14 +166,6 @@ search:
 ```
 
 All fields optional with sensible defaults. `graph_expansion` uses `*bool` pattern (like `query_expansion`, `rerank`) — nil defaults to true. Existing configs work unchanged.
-
----
-
-## Unreleased
-
-### Config Key Rename
-
-- **`ontology.relation_types`** replaces `ontology.relations` as the preferred config key, for consistency with `ontology.entity_types`. The old `relations` key is still accepted with a deprecation warning. If both keys are present, `relation_types` takes precedence.
 
 ---
 
