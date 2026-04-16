@@ -86,7 +86,7 @@ type CompilerConfig struct {
 	ArticleFields    []string `yaml:"article_fields,omitempty"`    // custom frontmatter fields extracted from LLM response
 
 	// Tiered compilation
-	DefaultTier      int            `yaml:"default_tier,omitempty"`       // default tier for sources (default: 1)
+	DefaultTier      int            `yaml:"default_tier,omitempty"`       // default tier for sources (default: 3)
 	TierDefaults     map[string]int `yaml:"tier_defaults,omitempty"`      // file extension → default tier
 	AutoPromote      *bool          `yaml:"auto_promote,omitempty"`       // auto-promote based on signals (default: true)
 	PromoteSignals   PromoteSignals `yaml:"promote_signals,omitempty"`
@@ -309,7 +309,7 @@ func Defaults() Config {
 			ArticleMaxTokens: 4000,
 			AutoCommit:       true,
 			AutoLint:         true,
-			DefaultTier:      1,
+			DefaultTier:      3,
 			Mode:             "auto",
 		},
 		Search: SearchConfig{
