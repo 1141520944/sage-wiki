@@ -18,16 +18,16 @@ import (
 	"github.com/xoai/sage-wiki/internal/linter"
 	"github.com/xoai/sage-wiki/internal/llm"
 	"github.com/xoai/sage-wiki/internal/manifest"
-	"github.com/xoai/sage-wiki/internal/memory"
 	mcppkg "github.com/xoai/sage-wiki/internal/mcp"
+	"github.com/xoai/sage-wiki/internal/memory"
 	"github.com/xoai/sage-wiki/internal/ontology"
 	"github.com/xoai/sage-wiki/internal/prompts"
-	tuidashboard "github.com/xoai/sage-wiki/internal/tui/dashboard"
-	"github.com/xoai/sage-wiki/internal/web"
 	"github.com/xoai/sage-wiki/internal/query"
 	"github.com/xoai/sage-wiki/internal/scribe"
 	"github.com/xoai/sage-wiki/internal/storage"
+	tuidashboard "github.com/xoai/sage-wiki/internal/tui/dashboard"
 	"github.com/xoai/sage-wiki/internal/vectors"
+	"github.com/xoai/sage-wiki/internal/web"
 	"github.com/xoai/sage-wiki/internal/wiki"
 )
 
@@ -279,7 +279,7 @@ func runCompile(cmd *cobra.Command, args []string) error {
 			result.ConceptsExtracted, result.ArticlesWritten, result.Errors)
 		return nil
 	}
-
+	// 估计；估算
 	estimate, _ := cmd.Flags().GetBool("estimate")
 	if estimate {
 		return runEstimate(dir)

@@ -17,9 +17,9 @@ var BuiltinEntityTypes = []EntityTypeDef{
 	{Name: TypeArtifact, Description: "A concrete output or deliverable"},
 }
 
-// MergedEntityTypes merges user config with built-in defaults.
-// Built-in types are always present even if not in config.
-// Config can extend built-in descriptions or add custom types.
+// MergedEntityTypes 合并实体类型会将用户配置与内置默认值进行合并。
+// 内置类型始终存在，即便未在配置中指定。
+// 配置可以扩展内置描述或添加自定义类型。
 func MergedEntityTypes(cfgTypes []config.EntityTypeConfig) []EntityTypeDef {
 	// Start with copies of builtins
 	result := make([]EntityTypeDef, len(BuiltinEntityTypes))

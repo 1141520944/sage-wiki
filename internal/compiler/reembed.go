@@ -12,8 +12,7 @@ import (
 	"github.com/xoai/sage-wiki/internal/vectors"
 )
 
-// ReEmbed regenerates vector embeddings for all FTS5 entries
-// without re-summarizing or recompiling.
+// ReEmbed  重新嵌入会为所有 FTS5 项重新生成向量嵌入，无需重新进行总结或重新编译。
 func ReEmbed(projectDir string) (int, error) {
 	cfg, err := config.Load(filepath.Join(projectDir, "config.yaml"))
 	if err != nil {

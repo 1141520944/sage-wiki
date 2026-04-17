@@ -14,11 +14,9 @@ import (
 	"github.com/xoai/sage-wiki/internal/log"
 )
 
-// Watch monitors source directories for changes and triggers compilation.
-// It tries fsnotify first, then falls back to polling if no events are
-// received (common on WSL2 /mnt/ paths and network drives).
-// If coordinator is non-nil, it is used to serialize compiles with on-demand
-// requests. If nil, a local coordinator is created.
+// Watch 该脚本会监视源目录的变化，并触发编译过程。
+// 它首先尝试使用 fsnotify 来监听事件，如果未收到任何事件（常见于 WSL2 /mnt 路径和网络驱动器），则会转而采用轮询方式。
+// 如果设置了协调器（coordinator）变量，则会使用它来对按需请求的编译过程进行序列化处理。如果该变量未设置，则会创建一个本地协调器。
 func Watch(projectDir string, debounceSeconds int, coordinator ...*CompileCoordinator) error {
 	var cc *CompileCoordinator
 	if len(coordinator) > 0 && coordinator[0] != nil {

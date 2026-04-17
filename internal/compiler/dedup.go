@@ -94,10 +94,9 @@ func (dc *DedupCache) Seed(names []string) {
 	}
 }
 
-// CheckDuplicate checks if a concept name is a duplicate of an existing concept.
-// Returns the existing concept name, similarity score, and the embedding vector.
-// The embedding is returned so callers can pass it to AddWithVec to avoid
-// double-embedding.
+// CheckDuplicate “检查重复”函数用于检查一个概念名称是否与现有概念的名称相同。
+// 该函数会返回现有概念的名称、相似度得分以及嵌入向量。
+// 返回的嵌入向量可供调用者使用，以便将其传递给“添加并使用向量”函数，从而避免重复嵌入操作。
 func (dc *DedupCache) CheckDuplicate(name string) (match string, score float64, vec []float32) {
 	dc.mu.RLock()
 	cacheEmpty := len(dc.cache) == 0

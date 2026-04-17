@@ -16,12 +16,12 @@ type ExtractedConcept struct {
 	Name    string   `json:"name"`
 	Aliases []string `json:"aliases,omitempty"`
 	Sources []string `json:"sources"`
-	Type    string   `json:"type"` // concept, technique, claim
+	Type    string   `json:"type"` // 概念、技术、主张
 }
 
-// ExtractConcepts runs Pass 2: concept extraction from summaries.
-// It takes new/updated summaries and the existing concept list,
-// asks the LLM to identify and deduplicate concepts.
+// ExtractConcepts “提取概念”步骤执行第二轮操作：从摘要中提取概念。
+// // 它会接收新的/更新的摘要以及现有的概念列表，
+// // 并要求语言模型识别并去重这些概念。
 const conceptBatchSize = 20 // summaries per LLM call
 
 func ExtractConcepts(
@@ -45,7 +45,7 @@ func ExtractConcepts(
 		return nil, nil
 	}
 
-	// Build existing concept list for dedup context
+	// 构建用于重复内容排除的现有概念列表
 	var existingList []string
 	for name := range existingConcepts {
 		existingList = append(existingList, name)
@@ -65,7 +65,7 @@ func ExtractConcepts(
 
 		var summaryTexts []string
 		for _, s := range batch {
-			// Use truncated summary to stay within context limits
+			// 使用简短的摘要以确保符合内容限制要求
 			summary := s.Summary
 			if len(summary) > 1000 {
 				summary = summary[:1000] + "\n..."
@@ -235,4 +235,3 @@ func parseConceptsJSON(text string) ([]ExtractedConcept, error) {
 
 	return concepts, nil
 }
-

@@ -20,16 +20,16 @@ var BuiltinRelations = []RelationDef{
 	{Name: RelExtends, Synonyms: []string{"extends", "extension of", "builds on", "builds upon", "扩展了", "基于"}},
 	{Name: RelOptimizes, Synonyms: []string{"optimizes", "optimization of", "improves upon", "faster than", "优化了", "改进了", "提升了"}},
 	{Name: RelContradicts, Synonyms: []string{"contradicts", "conflicts with", "disagrees with", "challenges", "矛盾", "冲突", "挑战了"}},
-	{Name: RelCites, Synonyms: nil},           // created programmatically, not by keyword extraction
+	{Name: RelCites, Synonyms: nil}, // created programmatically, not by keyword extraction
 	{Name: RelPrerequisiteOf, Synonyms: []string{"prerequisite", "requires knowledge of", "depends on", "built on top of", "前提", "依赖于", "前置条件"}},
 	{Name: RelTradesOff, Synonyms: []string{"trade-off", "tradeoff", "trades off", "at the cost of", "取舍", "权衡", "代价是"}},
-	{Name: RelDerivedFrom, Synonyms: nil},      // created programmatically by query system
+	{Name: RelDerivedFrom, Synonyms: nil}, // created programmatically by query system
 }
 
-// MergedRelations merges user config with built-in defaults.
-// For built-in types: config synonyms are appended (deduplicated).
-// For new types: a new RelationDef is created.
-// Built-in types are always present even if not in config.
+// MergedRelations 合并关系会将用户配置与内置默认值进行合并。
+// 对于内置类型：将配置中的同义词进行添加（去重）。
+// 对于新类型：创建一个新的关系定义。
+// 内置类型即使不在配置中也会始终存在。
 func MergedRelations(cfgRelations []config.RelationConfig) []RelationDef {
 	// Start with copies of builtins
 	result := make([]RelationDef, len(BuiltinRelations))

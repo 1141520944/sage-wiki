@@ -187,7 +187,7 @@ func runFullPipeline(sources []SourceInfo, opts FullPipelineOpts) *FullPipelineR
 		return result
 	}
 
-	// Embedding-based deduplication (if embedder available and strategy != "llm")
+	// 基于嵌入的重复数据删除（前提是嵌入器可用且策略不为“llm”）
 	if opts.Embedder != nil && cfg.Compiler.DedupStrategy != "llm" {
 		dc := NewDedupCache(opts.Embedder, opts.VecStore, cfg.Compiler.DedupThreshold)
 

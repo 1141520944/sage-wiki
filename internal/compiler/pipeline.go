@@ -24,44 +24,44 @@ import (
 
 // CompileOpts configures a compilation run.
 type CompileOpts struct {
-	DryRun   bool
-	Fresh    bool              // ignore checkpoint
-	Batch    bool              // use batch API (async, 50% discount)
-	NoCache  bool              // disable prompt caching
-	Prune    bool              // delete orphaned articles when sources removed
-	Tracker  *llm.CostTracker  // optional cost tracker
+	DryRun  bool
+	Fresh   bool             // ignore checkpoint
+	Batch   bool             // use batch API (async, 50% discount)
+	NoCache bool             // disable prompt caching
+	Prune   bool             // delete orphaned articles when sources removed
+	Tracker *llm.CostTracker // optional cost tracker
 }
 
 // CompileResult summarizes what happened during compilation.
 type CompileResult struct {
-	Added              int
-	Modified           int
-	Removed            int
-	Summarized         int
-	ConceptsExtracted  int
-	ArticlesWritten    int
-	Errors             int
-	EmbedErrors        int
-	CostReport         *llm.CostReport // nil if no LLM calls were made
+	Added             int
+	Modified          int
+	Removed           int
+	Summarized        int
+	ConceptsExtracted int
+	ArticlesWritten   int
+	Errors            int
+	EmbedErrors       int
+	CostReport        *llm.CostReport // nil if no LLM calls were made
 }
 
 // CompileState tracks progress for checkpoint/resume (ADR-018).
 type CompileState struct {
-	CompileID string   `json:"compile_id"`
-	StartedAt string   `json:"started_at"`
-	Pass      int      `json:"pass"`
-	Completed []string `json:"completed"`
-	Pending   []string `json:"pending"`
+	CompileID string         `json:"compile_id"`
+	StartedAt string         `json:"started_at"`
+	Pass      int            `json:"pass"`
+	Completed []string       `json:"completed"`
+	Pending   []string       `json:"pending"`
 	Failed    []FailedSource `json:"failed,omitempty"`
 	Batch     *BatchState    `json:"batch,omitempty"` // non-nil when batch is in flight
 }
 
 // BatchState tracks an in-flight batch job for checkpoint/resume.
 type BatchState struct {
-	BatchID    string `json:"batch_id"`
-	Provider   string `json:"provider"`
-	Pass       string `json:"pass"`        // which compiler pass (summarize, extract)
-	ResultsRef string `json:"results_ref"` // Anthropic: results URL; OpenAI: output_file_id
+	BatchID     string `json:"batch_id"`
+	Provider    string `json:"provider"`
+	Pass        string `json:"pass"`        // which compiler pass (summarize, extract)
+	ResultsRef  string `json:"results_ref"` // Anthropic: results URL; OpenAI: output_file_id
 	SubmittedAt string `json:"submitted_at"`
 }
 
@@ -71,7 +71,7 @@ type FailedSource struct {
 	Attempts int    `json:"attempts"`
 }
 
-// Compile runs Pass 0 (diff) and Pass 1 (summarize) of the compiler pipeline.
+// Compile 编译运行了编译流程的第 0 路程（差异比较）阶段和第 1 路程（总结）阶段。
 func Compile(projectDir string, opts CompileOpts) (*CompileResult, error) {
 	result := &CompileResult{}
 
@@ -106,7 +106,7 @@ func Compile(projectDir string, opts CompileOpts) (*CompileResult, error) {
 	}
 
 	// Pass 0: Diff
-	log.Info("Pass 0: computing diff")
+	log.Info("第 0 步：计算差异")
 	diff, err := Diff(projectDir, cfg, mf)
 	if err != nil {
 		return nil, fmt.Errorf("compile: diff: %w", err)
@@ -158,7 +158,7 @@ func Compile(projectDir string, opts CompileOpts) (*CompileResult, error) {
 		return resumeBatch(projectDir, client, cfg, mf, state, statePath, tracker, opts)
 	}
 
-	// Resolve batch mode: CLI flag > config mode > default (standard)
+	// 解除批处理模式：命令行参数 > 配置模式 > 默认（标准）模式
 	useBatch := opts.Batch
 	if !useBatch && cfg.Compiler.Mode == "batch" {
 		useBatch = true
@@ -198,7 +198,7 @@ func Compile(projectDir string, opts CompileOpts) (*CompileResult, error) {
 	mergedTypes := ontology.MergedEntityTypes(cfg.Ontology.EntityTypes)
 	pipelineOntStore := ontology.NewStore(db, ontology.ValidRelationNames(merged), ontology.ValidEntityTypeNames(mergedTypes))
 
-	// Backfill chunk index if needed (after migration, before first compile)
+	// 如有需要，则填充分块索引（在迁移之后、首次编译之前）
 	if chunkStore.NeedsBackfill(memStore) {
 		log.Info("chunk index empty with existing articles — running backfill")
 		if err := BackfillChunks(projectDir, cfg.Output, cfg.Search.ChunkSizeOrDefault(), chunkStore, vecStore, embedder, db); err != nil {
@@ -206,12 +206,12 @@ func Compile(projectDir string, opts CompileOpts) (*CompileResult, error) {
 		}
 	}
 
-	// Initialize compile_items store and tier manager
+	// 初始化编译项存储区和层级管理器
 	itemStore := NewCompileItemStore(db)
 	tierMgr := NewTierManager(&cfg.Compiler, itemStore)
 	bp := NewBackpressureController(cfg.Compiler.MaxParallel)
 
-	// Populate compile_items from manifest on first run (if empty)
+	// 在首次运行时，从“manifest”文件中填充“compile_items”（如果该列表为空）
 	if count, _ := itemStore.Count(); count == 0 && mf.SourceCount() > 0 {
 		populated, err := PopulateFromManifest(db, mf, cfg)
 		if err != nil {
@@ -221,7 +221,7 @@ func Compile(projectDir string, opts CompileOpts) (*CompileResult, error) {
 		}
 	}
 
-	// Migrate legacy checkpoint if present
+	// 如果存在旧版检查点，则迁移该检查点
 	if !opts.Fresh {
 		if migrated, err := MigrateCheckpoint(projectDir, db, mf, cfg); err != nil {
 			log.Warn("checkpoint migration failed", "error", err)
@@ -230,7 +230,7 @@ func Compile(projectDir string, opts CompileOpts) (*CompileResult, error) {
 		}
 	}
 
-	// Initialize legacy checkpoint state (retained for fallback)
+	// 初始化旧版检查点状态（保留以备备用）
 	if state == nil {
 		state = &CompileState{
 			CompileID: time.Now().Format("20060102-150405"),
@@ -274,7 +274,7 @@ func Compile(projectDir string, opts CompileOpts) (*CompileResult, error) {
 		progress.EndPhase()
 	}
 
-	// Tier 3: Full LLM pipeline (Pass 1 → 2 → 3) — only for Tier 3 sources
+	// 第三级：完整的大规模语言模型开发流程（第 1 阶段 → 第 2 阶段 → 第 3 阶段）——仅适用于第三级来源
 	tier3Pending, _ := itemStore.ListPending(3)
 	var toProcess []SourceInfo
 	tier3Set := make(map[string]bool)
@@ -287,7 +287,7 @@ func Compile(projectDir string, opts CompileOpts) (*CompileResult, error) {
 		}
 	}
 
-	// Also include sources from legacy checkpoint pending list
+	// 同时也要包括来自遗留检查点待处理列表中的信息。
 	completedSet := make(map[string]bool)
 	for _, p := range state.Completed {
 		completedSet[p] = true
@@ -429,8 +429,8 @@ func Compile(projectDir string, opts CompileOpts) (*CompileResult, error) {
 	return result, nil
 }
 
-// submitBatch builds batch requests from the diff and submits them.
-// Saves checkpoint and exits — next `compile` will resume via resumeBatch.
+// submitBatch 会根据差异构建批量请求并提交这些请求。
+// 保存检查点并退出——接下来的“编译”操作将通过 resumeBatch 重新开始。
 func submitBatch(
 	projectDir string,
 	client *llm.Client,
@@ -553,7 +553,7 @@ func submitBatch(
 	return result, nil
 }
 
-// resumeBatch polls and retrieves a previously submitted batch, then continues the pipeline.
+// resumeBatch 暂存批次会进行检查并获取之前提交的批次数据，然后继续执行流程。
 func resumeBatch(
 	projectDir string,
 	client *llm.Client,

@@ -72,9 +72,9 @@ type Store struct {
 	validEntityTypes map[string]bool
 }
 
-// NewStore creates an ontology store with application-layer type validation.
-// validRelations lists the allowed relation type names. If nil, all types are accepted.
-// validEntityTypes lists the allowed entity type names. If nil, all types are accepted.
+// NewStore 会创建一个带有应用层类型验证的本体存储。
+// validRelations 列出了允许的关联类型名称。如果为 nil，则所有类型都被接受。
+// validEntityTypes 列出了允许的实体类型名称。如果为 nil，则所有类型都被接受。
 func NewStore(db *storage.DB, validRelations []string, validEntityTypes []string) *Store {
 	s := &Store{db: db}
 	if validRelations != nil {

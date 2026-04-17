@@ -10,15 +10,15 @@ import (
 	"github.com/xoai/sage-wiki/internal/llm"
 	"github.com/xoai/sage-wiki/internal/log"
 	"github.com/xoai/sage-wiki/internal/manifest"
-	"github.com/xoai/sage-wiki/internal/prompts"
 	"github.com/xoai/sage-wiki/internal/memory"
 	"github.com/xoai/sage-wiki/internal/ontology"
+	"github.com/xoai/sage-wiki/internal/prompts"
 	"github.com/xoai/sage-wiki/internal/storage"
 	"github.com/xoai/sage-wiki/internal/vectors"
 )
 
-// ReExtract re-runs Pass 2 (concept extraction) and Pass 3 (article writing)
-// using existing summaries from wiki/summaries/. Skips Pass 0 and Pass 1.
+// ReExtract 重新提取会再次运行第二遍（概念提取）和第三遍（文章撰写）
+// 这是通过使用来自维基/摘要/目录的现有摘要来实现的。跳过了第 0 道和第 1 道流程。
 func ReExtract(projectDir string) (*CompileResult, error) {
 	result := &CompileResult{}
 
