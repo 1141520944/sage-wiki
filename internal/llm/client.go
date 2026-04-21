@@ -218,7 +218,8 @@ func newProvider(name string, apiKey string, baseURL string) (Provider, error) {
 		return newOpenAIProvider(apiKey, baseURL), nil
 	case "qwen":
 		if baseURL == "" {
-			baseURL = "https://dashscope.aliyuncs.com/compatible-mode/v1"
+			//baseURL = "https://dashscope.aliyuncs.com/compatible-mode/v1"
+			baseURL = "http://172.30.30.168:8000/v1"
 		}
 		return newOpenAIProvider(apiKey, baseURL), nil
 	case "anthropic":
@@ -263,7 +264,7 @@ func (e *RateLimitError) Error() string {
 	return fmt.Sprintf("llm: rate limited (HTTP %d): %s", e.StatusCode, e.Body)
 }
 
-// IsRateLimitError checks whether an error is a rate limit error.
+// IsRateLimitError 检查该错误是否属于速率限制错误。
 func IsRateLimitError(err error) bool {
 	var rle *RateLimitError
 	return errors.As(err, &rle)

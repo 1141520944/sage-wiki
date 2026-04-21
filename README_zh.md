@@ -333,6 +333,8 @@ sage-wiki compile --estimate    # 显示费用明细后退出
 
 **自动模式** -- 设置 `compiler.mode: auto` 和 `compiler.batch_threshold: 10`,编译 10 个以上源文件时自动使用 batch 模式。
 
+**自建 / 仅聊天接口** -- 若提供商没有 Batch API（例如请求 `/v1/batches` 返回 404）,在配置中加入 `compiler.batch_api: false`,编译将始终走**同步**对话补全,逐源处理;`compiler.mode: standard` 也可达到同样效果。二者可同时使用。
+
 ## 大规模知识库扩展
 
 sage-wiki 使用**分层编译**来处理 1 万至 10 万+文档的知识库。不再将每个源文件都通过完整的 LLM 管线,而是根据文件类型和使用情况将源文件路由到不同层级:

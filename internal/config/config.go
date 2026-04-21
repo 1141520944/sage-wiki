@@ -80,6 +80,7 @@ type CompilerConfig struct {
 	Mode               string   `yaml:"mode,omitempty"`                    // standard, batch, or auto
 	EstimateBefore     bool     `yaml:"estimate_before,omitempty"`         // prompt with cost estimate before compiling
 	PromptCache        *bool    `yaml:"prompt_cache,omitempty"`            // enable prompt caching (default: true)
+	BatchAPI           *bool    `yaml:"batch_api,omitempty"`               // false = never use async Batch API (self-hosted chat-only); default true
 	BatchThreshold     int      `yaml:"batch_threshold,omitempty"`         // min sources to auto-select batch mode
 	TokenPriceOverride float64  `yaml:"token_price_per_million,omitempty"` // override price per 1M input tokens
 	Timezone           string   `yaml:"timezone,omitempty"`                // IANA timezone for user-facing timestamps (default: UTC)
@@ -334,6 +335,15 @@ func (c *CompilerConfig) PromptCacheEnabled() bool {
 		return true
 	}
 	return *c.PromptCache
+}
+
+// BatchAPIEnabled is false when compiler.batch_api is set to false in YAML
+// (e.g. self-hosted OpenAI-compatible servers without /v1/batches). Omitted means true.
+func (c *CompilerConfig) BatchAPIEnabled() bool {
+	if c.BatchAPI == nil {
+		return true
+	}
+	return *c.BatchAPI
 }
 
 // UserTimeLocation returns the configured timezone for user-facing timestamps.

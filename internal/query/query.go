@@ -25,11 +25,11 @@ import (
 
 // QueryResult holds the answer and metadata.
 type QueryResult struct {
-	Question    string
-	Answer      string
-	Sources     []string // article paths used
-	Format      string   // markdown, terminal, marp
-	OutputPath  string   // if auto-filed
+	Question   string
+	Answer     string
+	Sources    []string // article paths used
+	Format     string   // markdown, terminal, marp
+	OutputPath string   // if auto-filed
 }
 
 // QueryOpts allows callers to pass shared resources.
@@ -666,8 +666,9 @@ type graphExpandedArticle struct {
 	Score       float64
 }
 
-// computeGraphExpansion runs the graph relevance scorer and returns expanded articles.
-// Returns nil if no seeds, expansion disabled, or on error.
+// computeGraphExpansion 运行图谱相关性评分器并返回扩展后的文章。
+//
+//	若无种子、扩展功能未启用或出现错误，则返回 nil 。
 func computeGraphExpansion(cfg *config.Config, ontStore *ontology.Store, seedIDs []string) []graphExpandedArticle {
 	if len(seedIDs) == 0 {
 		return nil

@@ -11,7 +11,7 @@ func TestAvailable(t *testing.T) {
 		t.Fatal("no templates loaded")
 	}
 
-	expected := []string{"summarize_article.txt", "summarize_paper.txt", "extract_concepts.txt", "write_article.txt", "caption_image.txt"}
+	expected := []string{"summarize_article.txt", "summarize_paper.txt", "summarize_conversation.txt", "extract_concepts.txt", "write_article.txt", "caption_image.txt"}
 	for _, exp := range expected {
 		found := false
 		for _, name := range names {
@@ -65,6 +65,23 @@ func TestRenderWriteArticle(t *testing.T) {
 	}
 	if !strings.Contains(result, "[[multi-head-attention]]") {
 		t.Error("expected wikilinks in See also")
+	}
+}
+
+func TestRenderSummarizeConversation(t *testing.T) {
+	result, err := Render("summarize_conversation", SummarizeData{
+		SourcePath: "raw/support/conversation_part_1.txt",
+		SourceType: "conversation",
+		MaxTokens:  2000,
+	}, "")
+	if err != nil {
+		t.Fatalf("Render: %v", err)
+	}
+	if !strings.Contains(result, "conversation_part_1.txt") {
+		t.Error("expected source path in output")
+	}
+	if !strings.Contains(result, "## Case overview") {
+		t.Error("expected Case overview section")
 	}
 }
 

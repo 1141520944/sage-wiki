@@ -29,9 +29,9 @@ type DedupCache struct {
 	cache map[string][]float32
 }
 
-// NewDedupCache creates a dedup cache with the given embedder and threshold.
-// If threshold <= 0, defaults to 0.85. vecStore is optional — if provided,
-// Seed will load existing embeddings from the store instead of re-embedding.
+// NewDedupCache 会根据给定的嵌入器和阈值创建一个去重缓存。
+// 如果阈值小于或等于 0，则默认值为 0.85。vecStore 是可选的——如果提供了该参数，
+// 则 Seed 将从存储中加载现有的嵌入，而不会重新进行嵌入操作。
 func NewDedupCache(embedder embed.Embedder, vecStore *vectors.Store, threshold float64) *DedupCache {
 	if threshold <= 0 {
 		threshold = 0.85
@@ -44,10 +44,9 @@ func NewDedupCache(embedder embed.Embedder, vecStore *vectors.Store, threshold f
 	}
 }
 
-// Seed populates the cache with existing concept names.
-// Tries to load embeddings from the vector store first (O(1) per concept,
-// no API calls). Falls back to embedding via API for concepts not in store.
-// Caps at maxDedupCacheSize to prevent unbounded memory growth.
+// Seed 会将缓存中填充现有的概念名称。
+// 首先尝试从向量存储中加载嵌入（每个概念的加载时间均为 O(1)，无需调用 API）。对于存储中未包含的概念，则通过 API 进行嵌入计算。
+// 会限制缓存大小至 maxDedupCacheSize，以防止内存无限增长。
 func (dc *DedupCache) Seed(names []string) {
 	if dc.embedder == nil {
 		return

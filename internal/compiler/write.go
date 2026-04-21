@@ -53,7 +53,7 @@ type ArticleWriteOpts struct {
 	Backpressure     *BackpressureController // optional; if nil, uses fixed semaphore
 }
 
-// WriteArticles runs Pass 3: write concept articles with ontology edges.
+// WriteArticles 第 3 次运行：编写包含本体边的概要文章。
 func WriteArticles(opts ArticleWriteOpts, concepts []ExtractedConcept) []ArticleResult {
 	maxParallel := opts.MaxParallel
 	if maxParallel <= 0 {
@@ -113,7 +113,7 @@ func WriteArticles(opts ArticleWriteOpts, concepts []ExtractedConcept) []Article
 func writeOneArticle(opts ArticleWriteOpts, concept ExtractedConcept) ArticleResult {
 	result := ArticleResult{ConceptName: concept.Name}
 
-	// Check for existing article
+	// 检查是否有相关文章存在
 	articlePath := filepath.Join(opts.OutputDir, "concepts", concept.Name+".md")
 	absPath := filepath.Join(opts.ProjectDir, articlePath)
 	var existingContent string
@@ -121,7 +121,7 @@ func writeOneArticle(opts ArticleWriteOpts, concept ExtractedConcept) ArticleRes
 		existingContent = string(data)
 	}
 
-	// Build source context from relevant sections (document splitting)
+	// 根据相关部分构建源代码上下文（文档拆分）
 	sourceContext := buildSourceContext(opts.ProjectDir, concept, opts.SplitThreshold)
 
 	// Build prompt
@@ -137,7 +137,7 @@ func writeOneArticle(opts ArticleWriteOpts, concept ExtractedConcept) ArticleRes
 		RelatedList:     strings.Join(relatedNames, ", "),
 		Confidence:      "medium",
 		MaxTokens:       opts.MaxTokens,
-		SourceContext:    sourceContext,
+		SourceContext:   sourceContext,
 	}, opts.Language)
 	if err != nil {
 		result.Error = fmt.Errorf("render write_article prompt: %w", err)
@@ -145,7 +145,7 @@ func writeOneArticle(opts ArticleWriteOpts, concept ExtractedConcept) ArticleRes
 	}
 
 	resp, err := opts.Client.ChatCompletion([]llm.Message{
-		{Role: "system", Content: "You are a wiki author writing comprehensive, precise articles for a personal knowledge base. Use [[wikilinks]] for cross-references. Do not include YAML frontmatter."},
+		{Role: "system", Content: "You are a knowledge-base author writing precise, well-structured articles (often from support dialogue). Use [[wikilinks]] for cross-references. Do not include YAML frontmatter."},
 		{Role: "user", Content: prompt},
 	}, llm.CallOpts{Model: opts.Model, MaxTokens: opts.MaxTokens})
 	if err != nil {
@@ -155,18 +155,18 @@ func writeOneArticle(opts ArticleWriteOpts, concept ExtractedConcept) ArticleRes
 
 	articleContent := resp.Content
 
-	// Strip any LLM-generated frontmatter — code builds frontmatter from ground-truth data.
+	// 删除任何由大型语言模型生成的前言部分——代码会根据真实数据自动生成前言内容。
 	articleContent = stripLLMFrontmatter(articleContent)
 
-	// Extract LLM-judged fields (confidence + any custom fields from config)
+	// 提取由 LLM 评估的字段（置信度以及配置中的任何自定义字段）
 	fields, articleContent := extractFields(articleContent, opts.ArticleFields)
 
-	// Build frontmatter: ground-truth fields + LLM-judged fields
+	// 构建前文部分：真实数据领域 + 由语言模型评估的领域
 	articleContent = buildFrontmatter(concept, fields, opts.ArticleFields, opts.UserTZ) + "\n\n" + articleContent
 
-	// Note: wikilinks are kept even if targets don't exist yet.
-	// Future compiles will create the missing articles, and the links
-	// will resolve naturally. Broken links are surfaced by `sage-wiki lint`.
+	// 注意：即使目标页面尚未创建，也仍保留相关链接。
+	// 未来的编译过程会创建缺失的页面，并且这些链接将自动解析。
+	// 被破坏的链接会由“sage-wiki lint”工具显示出来。
 
 	// Write article file
 	articleDir := filepath.Join(opts.ProjectDir, opts.OutputDir, "concepts")
@@ -214,10 +214,10 @@ func writeOneArticle(opts ArticleWriteOpts, concept ExtractedConcept) ArticleRes
 		}
 	}
 
-	// Extract typed relations from article text
+	// 从文章文本中提取已输入的关系信息
 	extractRelations(concept.Name, articleContent, opts.OntStore, opts.RelationPatterns)
 
-	// Index in FTS5
+	// FTS5 中的索引
 	if err := opts.MemStore.Add(memory.Entry{
 		ID:          "concept:" + concept.Name,
 		Content:     articleContent,
@@ -324,11 +324,10 @@ func buildFrontmatter(concept ExtractedConcept, fields map[string]string, fieldO
 	return b.String()
 }
 
-// extractFields scans the tail of the LLM response for "Key: value" lines matching
-// the given field names, removes them from the body, and returns a map of extracted values.
-// Only the last 15 lines are scanned to avoid false positives in article body text.
-// "confidence" is always extracted and normalized via mapConfidence.
-// LLMs may format keys with bold markdown (**Key:** or **Key**:), which is handled.
+// extractFields 会扫描 LLM 响应的尾部，查找与给定字段名称相匹配的“Key: value”行，然后将这些行从响应主体中删除，并返回一个包含提取值的映射。
+// 只会扫描最后 15 行以避免在文章主体文本中出现误报。
+// “confidence”总是会被提取并通过 mapConfidence 进行规范化处理。
+// LLM 可能会以加粗的 Markdown 格式（**Key:** 或 **Key**：）来格式化键，对此会进行处理。
 func extractFields(content string, fieldNames []string) (fields map[string]string, cleaned string) {
 	// Build lookup set: always include "confidence"
 	want := map[string]bool{"confidence": true}
@@ -452,8 +451,8 @@ func findRelatedConcepts(concept ExtractedConcept) []string {
 	return nil
 }
 
-// extractRelations parses article text for relationship patterns and creates ontology edges.
-// Looks for patterns like "X implements Y", "X extends Y", etc. near [[wikilinks]].
+// extractRelations 解析文章文本中的关系模式，并创建本体边。
+// // 寻找诸如“X 实现 Y”、“X 继承 Y”等模式，这些模式位于 [[维基链接]] 附近。
 func extractRelations(conceptID string, content string, ontStore *ontology.Store, patterns []ontology.RelationPattern) {
 	linkRe := regexp.MustCompile(`\[\[([^\]]+)\]\]`)
 	links := linkRe.FindAllStringSubmatch(content, -1)
@@ -525,10 +524,9 @@ func validateWikilinks(projectDir, outputDir, content string) string {
 	})
 }
 
-// buildSourceContext reads source files for a concept, splits large ones
-// by headings, and returns the relevant sections as context for article writing.
-// For small sources (below threshold), includes the full content.
-// Returns empty string if no sources can be read.
+// buildSourceContext “构建源代码上下文”功能会读取某一概念的相关源文件，将较大的文件按照标题进行拆分，并将其中相关的部分作为撰写文章的参考资料返回。
+// 对于较小的源文件（低于设定阈值），会包含其全部内容。
+// 若无法读取任何源文件，则返回空字符串。
 func buildSourceContext(projectDir string, concept ExtractedConcept, threshold int) string {
 	if threshold <= 0 {
 		threshold = 15000 // default from spec

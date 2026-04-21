@@ -90,7 +90,7 @@ func ExtractConcepts(
 		}
 
 		resp, err := client.ChatCompletion([]llm.Message{
-			{Role: "system", Content: "You are a concept extraction system for a knowledge wiki. Output valid JSON only."},
+			{Role: "system", Content: "You extract reusable knowledge themes from summaries (often customer–support). Output valid JSON only, with keys name, aliases, sources, type."},
 			{Role: "user", Content: prompt},
 		}, llm.CallOpts{Model: model, MaxTokens: 8192})
 		if err != nil {

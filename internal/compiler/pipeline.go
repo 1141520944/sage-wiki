@@ -158,21 +158,26 @@ func Compile(projectDir string, opts CompileOpts) (*CompileResult, error) {
 		return resumeBatch(projectDir, client, cfg, mf, state, statePath, tracker, opts)
 	}
 
-	// 解除批处理模式：命令行参数 > 配置模式 > 默认（标准）模式
-	useBatch := opts.Batch
-	if !useBatch && cfg.Compiler.Mode == "batch" {
-		useBatch = true
-	}
-	if !useBatch && cfg.Compiler.Mode == "auto" && client.SupportsBatch() {
-		sourceCount := len(diff.Added) + len(diff.Modified)
-		threshold := cfg.Compiler.BatchThreshold
-		if threshold <= 0 {
-			threshold = 10 // default: auto-batch when 10+ sources
-		}
-		if sourceCount >= threshold {
+	// Batch async API: optional — self-hosted chat endpoints often return 404 on /batches.
+	useBatch := false
+	if cfg.Compiler.BatchAPIEnabled() {
+		useBatch = opts.Batch
+		if !useBatch && cfg.Compiler.Mode == "batch" {
 			useBatch = true
-			log.Info("auto-selecting batch mode", "sources", sourceCount, "threshold", threshold)
 		}
+		if !useBatch && cfg.Compiler.Mode == "auto" && client.SupportsBatch() {
+			sourceCount := len(diff.Added) + len(diff.Modified)
+			threshold := cfg.Compiler.BatchThreshold
+			if threshold <= 0 {
+				threshold = 10 // default: auto-batch when 10+ sources
+			}
+			if sourceCount >= threshold {
+				useBatch = true
+				log.Info("auto-selecting batch mode", "sources", sourceCount, "threshold", threshold)
+			}
+		}
+	} else if opts.Batch {
+		log.Warn("compile: ignoring --batch (compiler.batch_api is false)")
 	}
 	if useBatch {
 		if !client.SupportsBatch() {
@@ -503,7 +508,7 @@ func submitBatch(
 		requests = append(requests, llm.BatchRequest{
 			CustomID: src.Path,
 			Messages: []llm.Message{
-				{Role: "system", Content: "You are a research assistant creating structured summaries for a personal knowledge wiki."},
+				{Role: "system", Content: "You are an assistant producing structured source notes for a personal knowledge wiki (documents or dialogue transcripts)."},
 				{Role: "user", Content: prompt + "\n\n---\n\nSource content:\n\n" + content.Text},
 			},
 			Opts: llm.CallOpts{Model: model, MaxTokens: maxTokens},
@@ -731,7 +736,7 @@ func resumeBatch(
 		}
 
 		client.SetPass("extract")
-		extCacheID, _ := client.SetupCache("You are an expert knowledge organizer. Extract structured concepts from source summaries.", model)
+		extCacheID, _ := client.SetupCache("You extract reusable knowledge themes from summaries (often customer–support). Output valid JSON only.", model)
 		progress.StartPhase("Pass 2: Extract concepts", len(successfulSummaries))
 		concepts, err := ExtractConcepts(successfulSummaries, mf.Concepts, client, model)
 		if err != nil {
@@ -762,7 +767,7 @@ func resumeBatch(
 				mergedTypes := ontology.MergedEntityTypes(cfg.Ontology.EntityTypes)
 				ontStore := ontology.NewStore(db, ontology.ValidRelationNames(merged), ontology.ValidEntityTypeNames(mergedTypes))
 				client.SetPass("write")
-				writeCacheID, _ := client.SetupCache("You are a knowledge base article writer. Write comprehensive, well-structured wiki articles.", writeModel)
+				writeCacheID, _ := client.SetupCache("You are a knowledge-base author writing precise articles, often from support dialogue. Use wikilinks for cross-references.", writeModel)
 				relPatterns := ontology.RelationPatterns(merged)
 				progress.StartPhase("Pass 3: Write articles", len(concepts))
 				articles := WriteArticles(ArticleWriteOpts{

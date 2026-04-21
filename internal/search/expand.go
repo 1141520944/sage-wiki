@@ -18,17 +18,15 @@ type ExpandedQuery struct {
 	Hyde     string   // hypothetical answer snippet for embedding similarity
 }
 
-// AllQueries returns Original + Lex variants for BM25 multi-query search.
+// AllQueries 为 BM25 多查询搜索提供原始版本及 Lex 变体。
 func (eq *ExpandedQuery) AllQueries() []string {
 	queries := []string{eq.Original}
 	queries = append(queries, eq.Lex...)
 	return queries
 }
 
-// ExpandQuery calls the LLM to generate search variants for a user question.
-// Returns an ExpandedQuery with lex (keyword rewrites), vec (semantic rewrites),
-// and hyde (hypothetical answer) variants. On any failure, returns the original
-// query only — no degradation.
+// ExpandQuery 调用语言模型为用户问题生成搜索变体。
+// 返回一个扩展查询，其中包含词汇（关键词重写）、向量（语义重写）和假设答案（hyde）变体。在任何失败情况下，仅返回原始查询——不会降低质量。
 func ExpandQuery(question string, client *llm.Client, model string) (*ExpandedQuery, error) {
 	prompt := fmt.Sprintf(`Given the search query: %q
 Generate search variants to improve retrieval:

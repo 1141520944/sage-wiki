@@ -61,14 +61,12 @@ func getTypeAffinity(typeA, typeB string) float64 {
 	return 1.0
 }
 
-// ScoreRelevance computes graph-based relevance scores for candidate articles
-// relative to seed entities. Uses only the ontology store (no manifest needed).
-//
-// Four signals:
-//   - direct_link:     ontology relation exists between seed and candidate (excluding cites)
-//   - source_overlap:  shared cites targets (source entities) between seed and candidate
-//   - common_neighbor: Adamic-Adar index — shared neighbors weighted by 1/log(degree)
-//   - type_affinity:   bonus based on entity type pairs
+// ScoreRelevance 函数用于计算针对种子实体的候选文章的基于图的关联分数。该函数仅使用本体库（无需使用清单）。
+// 四个指标：
+//   - 直接链接：种子节点与候选节点之间存在本体关系（不包括引用）
+//   - 源域重叠：种子节点和候选节点之间共享的引用目标（源实体）
+//   - 共同邻接：阿达米-阿达尔指数——根据节点度数按 1/对数形式加权计算的共同邻接节点数量
+//   - 类型亲和性：基于实体类型对的奖励得分
 func ScoreRelevance(ont *ontology.Store, opts RelevanceOpts) ([]ScoredArticle, error) {
 	if len(opts.SeedIDs) == 0 {
 		return nil, nil

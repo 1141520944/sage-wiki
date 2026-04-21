@@ -181,7 +181,7 @@ func summarizeOne(
 		}
 
 		resp, err := client.ChatCompletion([]llm.Message{
-			{Role: "system", Content: "You are a research assistant creating structured summaries for a personal knowledge wiki."},
+			{Role: "system", Content: "You are an assistant producing structured source notes for a personal knowledge wiki (documents or dialogue transcripts)."},
 			{Role: "user", Content: prompt + "\n\n---\n\nSource content:\n\n" + content.Text},
 		}, llm.CallOpts{Model: model, MaxTokens: maxTokens})
 		if err != nil {
@@ -343,7 +343,7 @@ func summarizeChunks(
 
 		log.Debug("summarizing group", "source", info.Path, "group", fmt.Sprintf("%d/%d", gi+1, len(groups)), "chunks_in_group", len(group), "budget", perGroupBudget)
 		resp, err := client.ChatCompletion([]llm.Message{
-			{Role: "system", Content: "You are summarizing a section of a larger document."},
+			{Role: "system", Content: "You are summarizing a section of a larger source (document or transcript) for a knowledge wiki."},
 			{Role: "user", Content: prompt + "\n\n---\n\nSection:\n\n" + groupText.String()},
 		}, llm.CallOpts{Model: model, MaxTokens: perGroupBudget})
 		if err != nil {

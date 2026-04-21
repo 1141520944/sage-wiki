@@ -333,6 +333,8 @@ Or set `compiler.estimate_before: true` in config to prompt every time.
 
 **Auto mode** — Set `compiler.mode: auto` and `compiler.batch_threshold: 10` to automatically use batch when compiling 10+ sources.
 
+**Self-hosted / chat-only APIs** — If your server has no Batch endpoint (e.g. `404` on `/v1/batches`), set `compiler.batch_api: false` so compile always uses synchronous chat completions. `compiler.mode: standard` has the same effect on batch selection; you can use both.
+
 ## Scaling to Large Vaults
 
 sage-wiki uses **tiered compilation** to handle vaults of 10K-100K+ documents. Instead of compiling everything through the full LLM pipeline, sources are routed through tiers based on file type and usage:

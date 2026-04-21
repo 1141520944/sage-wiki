@@ -43,7 +43,7 @@ func EnhancedSearch(opts EnhancedSearchOpts) ([]SearchResult, error) {
 		opts.Limit = 10
 	}
 
-	// Step 1: Strong-signal check — skip expansion if confident
+	// Step 1: 强信号检查——若确信信号良好则跳过扩展步骤
 	expanded := fallbackExpansion(opts.Query)
 	if opts.QueryExpansion && opts.Client != nil {
 		if !StrongSignal(opts.Query, opts.MemStore) {
@@ -58,14 +58,14 @@ func EnhancedSearch(opts EnhancedSearchOpts) ([]SearchResult, error) {
 		}
 	}
 
-	// Step 2: Chunk-level BM25 search with all query variants
+	// Step 2: 基于分块的 BM25 搜索（包含所有查询变体）
 	candidateLimit := opts.Limit * 5 // fetch more for fusion
 	bm25Results, err := opts.ChunkStore.SearchChunksMultiQuery(expanded.AllQueries(), candidateLimit)
 	if err != nil {
 		return nil, err
 	}
 
-	// Step 3: Chunk-level vector search (if embedder available)
+	// Step 3: 块级向量搜索（若嵌入器可用）
 	var vecResults []vectors.ChunkVectorResult
 	if opts.Embedder != nil {
 		// Embed all vector-oriented queries: original + vec variants + hyde
@@ -174,7 +174,7 @@ func EnhancedSearch(opts EnhancedSearchOpts) ([]SearchResult, error) {
 		fused[i].retrievalRank = i + 1
 	}
 
-	// Step 5: Deduplicate to document level — keep best chunk per doc
+	// Step 5: 按文档级别去重复——为每个文档保留最佳片段
 	docBest := make(map[string]*fusedChunk)
 	for i := range fused {
 		fc := &fused[i]

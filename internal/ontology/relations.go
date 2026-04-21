@@ -77,7 +77,7 @@ func ValidRelationNames(defs []RelationDef) []string {
 	return names
 }
 
-// RelationPatterns builds extraction patterns, skipping types with empty synonyms.
+// RelationPatterns 构建提取模式，跳过那些同义词为空的类型。
 func RelationPatterns(defs []RelationDef) []RelationPattern {
 	var patterns []RelationPattern
 	for _, d := range defs {

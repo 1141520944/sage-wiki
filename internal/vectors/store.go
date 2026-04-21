@@ -246,8 +246,8 @@ func (s *Store) Dimensions() (int, error) {
 	return dims, err
 }
 
-// CosineSimilarity computes cosine similarity between two vectors.
-// Returns 0 if vectors have different dimensions (safe for mixed-provider scenarios).
+// CosineSimilarity 余弦相似度函数用于计算两个向量之间的余弦相似度。
+// 若两个向量的维度不同，则返回 0（适用于混合供应商场景）。
 func CosineSimilarity(a, b []float32) float64 {
 	if len(a) != len(b) || len(a) == 0 {
 		return 0
@@ -266,7 +266,7 @@ func CosineSimilarity(a, b []float32) float64 {
 	return dot / denom
 }
 
-// encodeFloat32s converts []float32 to []byte (little-endian).
+// encodeFloat32s 将 []float32 类型的数据转换为 []byte 类型（采用小端序）。
 func encodeFloat32s(v []float32) []byte {
 	buf := make([]byte, len(v)*4)
 	for i, f := range v {
@@ -284,7 +284,7 @@ func decodeFloat32s(buf []byte) []float32 {
 	return v
 }
 
-// insertSorted maintains a sorted slice of top-k results (descending by score).
+// insertSorted 维护一个按得分降序排列的前 k 个结果的有序列表。
 func insertSorted(results []VectorResult, item VectorResult, limit int) []VectorResult {
 	pos := len(results)
 	for pos > 0 && results[pos-1].Score < item.Score {

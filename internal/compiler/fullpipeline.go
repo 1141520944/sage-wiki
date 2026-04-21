@@ -67,7 +67,7 @@ func runFullPipeline(sources []SourceInfo, opts FullPipelineOpts) *FullPipelineR
 	client.SetPass("summarize")
 	var sumCacheID string
 	if opts.CacheEnabled {
-		sumCacheID, _ = client.SetupCache("You are a research assistant creating structured summaries for a personal knowledge wiki.", cfg.Models.Summarize)
+		sumCacheID, _ = client.SetupCache("You are an assistant producing structured source notes for a personal knowledge wiki (documents or dialogue transcripts).", cfg.Models.Summarize)
 	}
 	progress.StartPhase("Pass 1: Summarize sources", len(sources))
 
@@ -177,7 +177,7 @@ func runFullPipeline(sources []SourceInfo, opts FullPipelineOpts) *FullPipelineR
 	client.SetPass("extract")
 	var extCacheID string
 	if opts.CacheEnabled {
-		extCacheID, _ = client.SetupCache("You are an expert knowledge organizer. Extract structured concepts from source summaries.", extractModel)
+		extCacheID, _ = client.SetupCache("You extract reusable knowledge themes from summaries (often customer–support). Output valid JSON only.", extractModel)
 	}
 	progress.StartPhase("Pass 2: Extract concepts", len(successfulSummaries))
 	concepts, err := ExtractConcepts(successfulSummaries, mf.Concepts, client, extractModel)
@@ -247,7 +247,7 @@ func runFullPipeline(sources []SourceInfo, opts FullPipelineOpts) *FullPipelineR
 	progress.EndPhase()
 	client.TeardownCache(extCacheID)
 
-	// Pass 3: Write articles
+	// Pass 3: 撰写文章
 	if len(concepts) == 0 {
 		return result
 	}
@@ -271,7 +271,7 @@ func runFullPipeline(sources []SourceInfo, opts FullPipelineOpts) *FullPipelineR
 	client.SetPass("write")
 	var writeCacheID string
 	if opts.CacheEnabled {
-		writeCacheID, _ = client.SetupCache("You are a knowledge base article writer. Write comprehensive, well-structured wiki articles.", writeModel)
+		writeCacheID, _ = client.SetupCache("You are a knowledge-base author writing precise articles, often from support dialogue. Use wikilinks for cross-references.", writeModel)
 	}
 	relPatterns := ontology.RelationPatterns(merged)
 	progress.StartPhase("Pass 3: Write articles", len(concepts))

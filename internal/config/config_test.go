@@ -355,6 +355,22 @@ func TestCostConfigDefaults(t *testing.T) {
 	if cfg.Compiler.Mode != "auto" {
 		t.Errorf("expected default mode 'auto', got %q", cfg.Compiler.Mode)
 	}
+	if !cfg.Compiler.BatchAPIEnabled() {
+		t.Error("expected batch_api enabled by default when unset")
+	}
+}
+
+func TestCompilerBatchAPIDisabled(t *testing.T) {
+	cfg := Defaults()
+	f := false
+	cfg.Compiler.BatchAPI = &f
+	if cfg.Compiler.BatchAPIEnabled() {
+		t.Error("expected BatchAPIEnabled false")
+	}
+	cfg.Compiler.BatchAPI = nil
+	if !cfg.Compiler.BatchAPIEnabled() {
+		t.Error("expected BatchAPIEnabled true when nil")
+	}
 }
 
 func TestInvalidCompilerMode(t *testing.T) {

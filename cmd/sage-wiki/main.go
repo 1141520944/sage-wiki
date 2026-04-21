@@ -158,7 +158,7 @@ func init() {
 	compileCmd.Flags().Bool("re-embed", false, "Re-generate embeddings for all entries without recompiling")
 	compileCmd.Flags().Bool("re-extract", false, "Re-run concept extraction and article writing from existing summaries")
 	compileCmd.Flags().Bool("estimate", false, "Show cost estimate without compiling")
-	compileCmd.Flags().Bool("batch", false, "Use batch API for 50% cost reduction (async)")
+	compileCmd.Flags().Bool("batch", false, "Use provider Batch API for lower async pricing (ignored if compiler.batch_api is false)")
 	compileCmd.Flags().Bool("no-cache", false, "Disable prompt caching for this run")
 	compileCmd.Flags().Bool("prune", false, "Delete orphaned articles when their sole source is removed")
 

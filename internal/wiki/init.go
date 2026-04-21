@@ -225,6 +225,7 @@ compiler:
   article_max_tokens: 4000
   auto_commit: true
   auto_lint: true
+  # batch_api: false          # use if your LLM host has no Batch API (404 on /batches); compile uses sync chat only
   # timezone: Asia/Shanghai   # IANA timezone for user-facing timestamps (default: UTC)
   # article_fields:           # custom frontmatter fields extracted from LLM response
   #   - language
@@ -309,6 +310,7 @@ compiler:
   max_parallel: 4
   auto_commit: true
   auto_lint: true
+  # batch_api: false          # self-hosted / chat-only endpoints without async batch
 
 search:
   hybrid_weight_bm25: 0.7

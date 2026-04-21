@@ -1,4 +1,4 @@
-You are a wiki author writing a comprehensive article about a concept.
+You are writing a knowledge-base article for support / operations teams (and for RAG retrieval). The underlying sources are often dialogue summaries (customer–support), not academic papers.
 
 Concept: {{.ConceptName}}
 Sources: {{.Sources}}
@@ -19,19 +19,25 @@ Related concepts: {{.RelatedList}}
 {{.Learnings}}
 {{end}}
 
-Write a structured wiki article with:
+Write a structured article using these headings (exact spelling):
 
 ## Definition
-Clear, precise definition of the concept.
+One short paragraph: what this concept means in plain language for someone handling tickets or messages.
 
-## How it works
-Technical explanation with appropriate depth.
+## When it applies
+Typical triggers, channels, or order states (e.g. delayed shipment, stock uncertainty, refund request). Say "not specified in sources" if unclear.
 
-## Variants
-Known variants, implementations, or alternatives.
+## What customers usually want
+Goals and frustrations, phrased generically (no fabricated personal data). Reference product/order context only if present in the material.
 
-## Trade-offs
-Key trade-offs, limitations, or considerations.
+## How to handle it
+Practical guidance: options support offered, sequencing, what to verify, suggested wording patterns only if grounded in the sources (otherwise describe actions, not scripts).
+
+## Policies, constraints, and facts
+Concrete rules, timelines, carrier/platform statements, or inventory limits mentioned. Distinguish confirmed facts vs inferred.
+
+## Risks and edge cases
+Ambiguities, contradictions, missing IDs, or when to escalate.
 
 ## See also
 List related concepts as [[wikilinks]]:
@@ -40,7 +46,7 @@ List related concepts as [[wikilinks]]:
 
 Do NOT include YAML frontmatter — it will be added automatically.
 
-At the very end of your response, add exactly one line assessing your confidence:
+At the very end of your response, add exactly one line:
 Confidence: high, medium, or low
 
-Keep under {{.MaxTokens}} tokens. Be precise and factual.
+Keep under {{.MaxTokens}} tokens. Be precise and factual; do not invent ticket details.

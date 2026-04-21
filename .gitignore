@@ -15,3 +15,4 @@ sage/
 /sage-wiki
 bin/__pycache__/
 .idea
+test/*
