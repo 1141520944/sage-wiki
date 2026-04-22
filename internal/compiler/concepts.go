@@ -65,12 +65,8 @@ func ExtractConcepts(
 
 		var summaryTexts []string
 		for _, s := range batch {
-			// 使用简短的摘要以确保符合内容限制要求
-			summary := s.Summary
-			if len(summary) > 1000 {
-				summary = summary[:1000] + "\n..."
-			}
-			summaryTexts = append(summaryTexts, fmt.Sprintf("### Source: %s\n%s", s.SourcePath, summary))
+			// Keep full summaries so structured sections are not truncated.
+			summaryTexts = append(summaryTexts, fmt.Sprintf("### Source: %s\n%s", s.SourcePath, s.Summary))
 		}
 
 		// Include previously extracted concepts in the dedup list

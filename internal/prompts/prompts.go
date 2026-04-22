@@ -186,6 +186,10 @@ type ExtractData struct {
 	Summaries        string
 }
 
+type ExtractKnowledgeUnitsData struct {
+	Summaries string
+}
+
 // WriteArticleData holds data for article writing template.
 type WriteArticleData struct {
 	ConceptName     string

@@ -180,6 +180,18 @@ func runFullPipeline(sources []SourceInfo, opts FullPipelineOpts) *FullPipelineR
 		extCacheID, _ = client.SetupCache("You extract reusable knowledge themes from summaries (often customer–support). Output valid JSON only.", extractModel)
 	}
 	progress.StartPhase("Pass 2: Extract concepts", len(successfulSummaries))
+
+	// Structured knowledge-unit extraction for incremental merge tables.
+	units, uErr := ExtractKnowledgeUnits(successfulSummaries, client, extractModel)
+	if uErr != nil {
+		log.Warn("knowledge unit extraction failed", "error", uErr)
+	} else {
+		logKnowledgeUnitStats(units)
+		if err := UpsertKnowledgeUnits(opts.DB, units); err != nil {
+			log.Warn("knowledge unit upsert failed", "error", err)
+		}
+	}
+
 	concepts, err := ExtractConcepts(successfulSummaries, mf.Concepts, client, extractModel)
 	if err != nil {
 		progress.ItemError("concept extraction", err)

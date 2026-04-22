@@ -163,7 +163,7 @@ func summarizeOne(
 	result.ChunkCount = content.ChunkCount
 
 	// Select prompt template — try type-specific first, fall back to article
-	templateName := "summarize_" + content.Type
+	templateName := chooseSummaryTemplate(content.Type, info.Path, content.Text)
 	if _, err := prompts.Render(templateName, prompts.SummarizeData{}, ""); err != nil {
 		templateName = "summarize_article" // fallback for unknown types
 	}
@@ -212,6 +212,20 @@ func summarizeOne(
 	}
 
 	return writeSummaryFile(projectDir, outputDir, info, content, summaryText, result, userTZ)
+}
+
+func chooseSummaryTemplate(sourceType, sourcePath, text string) string {
+	lowerPath := strings.ToLower(sourcePath)
+	if sourceType == "conversation" || strings.Contains(lowerPath, "conversation") || strings.Contains(lowerPath, "chat") || strings.Contains(lowerPath, "客服") {
+		return "summarize_conversation"
+	}
+	// Heuristic: role-labeled transcripts should use conversation template even if type was detected as article.
+	lowerText := strings.ToLower(text)
+	if strings.Contains(lowerText, "customer:") || strings.Contains(lowerText, "support:") ||
+		strings.Contains(lowerText, "用户:") || strings.Contains(lowerText, "客服:") {
+		return "summarize_conversation"
+	}
+	return "summarize_" + sourceType
 }
 
 // validateSummary checks minimum quality thresholds for a generated summary.

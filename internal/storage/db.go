@@ -146,6 +146,7 @@ func (db *DB) migrate() error {
 		{sql: migrationV3},
 		{sql: migrationV4, disableFK: true},
 		{sql: migrationV5},
+		{sql: migrationV6},
 	}
 
 	for i := version; i < len(migrations); i++ {
@@ -378,4 +379,57 @@ CREATE INDEX IF NOT EXISTS idx_ci_type ON compile_items(file_type);
 CREATE INDEX IF NOT EXISTS idx_ci_compile ON compile_items(compile_id);
 CREATE INDEX IF NOT EXISTS idx_ci_hits ON compile_items(query_hit_count);
 CREATE INDEX IF NOT EXISTS idx_ci_queried ON compile_items(last_queried_at);
+`
+
+// migrationV6 adds structured knowledge-unit tables for incremental RAG merging.
+const migrationV6 = `
+CREATE TABLE IF NOT EXISTS method_units (
+	unit_key         TEXT PRIMARY KEY,
+	method_id        TEXT NOT NULL DEFAULT '',
+	method_name      TEXT NOT NULL,
+	trigger_signature TEXT NOT NULL DEFAULT '',
+	payload_json     TEXT NOT NULL,
+	source_summaries TEXT NOT NULL DEFAULT '[]',
+	created_at       TEXT NOT NULL DEFAULT (datetime('now')),
+	updated_at       TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_method_name ON method_units(method_name);
+
+CREATE TABLE IF NOT EXISTS answer_cards (
+	unit_key          TEXT PRIMARY KEY,
+	answer_card_id    TEXT NOT NULL DEFAULT '',
+	question_pattern  TEXT NOT NULL,
+	scope_signature   TEXT NOT NULL DEFAULT '',
+	answer_value      TEXT NOT NULL,
+	payload_json      TEXT NOT NULL,
+	source_summaries  TEXT NOT NULL DEFAULT '[]',
+	created_at        TEXT NOT NULL DEFAULT (datetime('now')),
+	updated_at        TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_answer_pattern ON answer_cards(question_pattern);
+
+CREATE TABLE IF NOT EXISTS concept_units (
+	unit_key          TEXT PRIMARY KEY,
+	concept_id        TEXT NOT NULL DEFAULT '',
+	concept_name      TEXT NOT NULL,
+	concept_type      TEXT NOT NULL DEFAULT '',
+	payload_json      TEXT NOT NULL,
+	source_summaries  TEXT NOT NULL DEFAULT '[]',
+	created_at        TEXT NOT NULL DEFAULT (datetime('now')),
+	updated_at        TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_concept_name ON concept_units(concept_name);
+
+CREATE TABLE IF NOT EXISTS article_units (
+	unit_key               TEXT PRIMARY KEY,
+	article_id             TEXT NOT NULL DEFAULT '',
+	title                  TEXT NOT NULL,
+	article_type           TEXT NOT NULL DEFAULT '',
+	primary_methodology_id TEXT NOT NULL DEFAULT '',
+	payload_json           TEXT NOT NULL,
+	source_summaries       TEXT NOT NULL DEFAULT '[]',
+	created_at             TEXT NOT NULL DEFAULT (datetime('now')),
+	updated_at             TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_article_title ON article_units(title);
 `

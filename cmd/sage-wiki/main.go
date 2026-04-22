@@ -180,8 +180,9 @@ func init() {
 
 	// Query flags
 	queryCmd.Flags().String("scope", "local", "Query scope: local, global, or all")
+	exportFitmentCmd.Flags().StringVar(&exportFitmentOutput, "output", "", "Output CSV path (default: <output>/fitment_relations.csv)")
 
-	rootCmd.AddCommand(initCmd, compileCmd, serveCmd, lintCmd, searchCmd, queryCmd, statusCmd, ingestCmd, doctorCmd, tuiCmd, provenanceCmd, scribeCmd, diffCmd, listCmd, ontologyCmd, writeCmd, learnCmd, captureCmd, addSourceCmd, sourceCmd, hubCmd)
+	rootCmd.AddCommand(initCmd, compileCmd, serveCmd, lintCmd, searchCmd, queryCmd, statusCmd, ingestCmd, doctorCmd, tuiCmd, provenanceCmd, scribeCmd, diffCmd, listCmd, ontologyCmd, writeCmd, learnCmd, captureCmd, addSourceCmd, sourceCmd, hubCmd, exportFitmentCmd)
 }
 
 // Placeholder implementations — will be filled in subsequent tasks

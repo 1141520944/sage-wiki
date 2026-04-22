@@ -298,6 +298,10 @@ func splitByParagraphs(text string, maxTokens int) []Chunk {
 // DetectSourceType guesses source type from file extension.
 // This is the basic 1-parameter version used as a fallback.
 func DetectSourceType(path string) string {
+	lowerPath := strings.ToLower(path)
+	if strings.Contains(lowerPath, "conversation") || strings.Contains(lowerPath, "chat") || strings.Contains(lowerPath, "transcript") {
+		return "conversation"
+	}
 	ext := strings.ToLower(filepath.Ext(path))
 	switch ext {
 	case ".pdf":

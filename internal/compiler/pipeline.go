@@ -738,6 +738,17 @@ func resumeBatch(
 		client.SetPass("extract")
 		extCacheID, _ := client.SetupCache("You extract reusable knowledge themes from summaries (often customer–support). Output valid JSON only.", model)
 		progress.StartPhase("Pass 2: Extract concepts", len(successfulSummaries))
+
+		units, uErr := ExtractKnowledgeUnits(successfulSummaries, client, model)
+		if uErr != nil {
+			log.Warn("knowledge unit extraction failed", "error", uErr)
+		} else {
+			logKnowledgeUnitStats(units)
+			if err := UpsertKnowledgeUnits(db, units); err != nil {
+				log.Warn("knowledge unit upsert failed", "error", err)
+			}
+		}
+
 		concepts, err := ExtractConcepts(successfulSummaries, mf.Concepts, client, model)
 		if err != nil {
 			progress.ItemError("concept extraction", err)
